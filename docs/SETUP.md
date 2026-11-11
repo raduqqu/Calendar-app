@@ -109,7 +109,7 @@ Do this after milestone 1, when there is code in the GitHub repository.
 
 1. Go to **vercel.com** → **Sign Up** → **Continue with GitHub**. Choose the **Hobby** (free) plan.
 2. Click **Add New…** → **Project**. Find `ply` in the list and click **Import**. (If it is not listed, click **Adjust GitHub App Permissions** and give Vercel access to the `ply` repository.)
-3. Framework preset should say **Next.js** automatically. Do not change anything else.
+3. Framework preset should say **Next.js**. The repository contains a `vercel.json` file that tells Vercel this; without it Vercel may guess "Node" and fail with "No entrypoint found". Do not change anything else.
 4. Open **Environment Variables** and add each name from the table in Part 7 with its value. Leave all environments ticked.
 5. Click **Deploy**. After a minute or two you get an address like `https://ply-xxxx.vercel.app`. Copy it into your private note. From now on, every time code is pushed to GitHub, Vercel updates the app by itself.
 

@@ -74,6 +74,7 @@ Supabase Postgres (RLS on every table)   │
 ├─ CLAUDE.md                 this file
 ├─ README.md                 run locally, env vars, deploy
 ├─ .env.example              variable names only, no values
+├─ vercel.json               tells Vercel this is a Next.js app (do not delete)
 ├─ docs/SETUP.md             click-by-click account setup
 ├─ app/
 │  ├─ layout.tsx             fonts, global shell
@@ -237,7 +238,7 @@ Names only; values go in Vercel and in a local `.env.local` that is never commit
 - [x] 1. Layout shell with sample data (Today timeline, Inbox, People, Settings, tab bar / sidebar, "+" sheet). Sample data lives in `lib/demo/data.ts` and is deleted once real data replaces it.
 - [ ] 2–9 not started.
 
-**Decisions taken with defaults (owner has not confirmed yet, easy to change):** name "Ply"; new people are created when a debrief is saved, not on calendar sync; relationship tone is three tags (warm / neutral / cold); no debrief push for meetings with more than 10 attendees; 24-hour clock and day-month dates.
+**Product decisions (confirmed by the owner):** name "Ply"; new people are created when a debrief is saved, not on calendar sync; relationship tone is three tags (warm / neutral / cold); no debrief push for meetings with more than 10 attendees; 24-hour clock and day-month dates.
 
 ## 9. Technical notes
 
@@ -245,8 +246,10 @@ Names only; values go in Vercel and in a local `.env.local` that is never commit
 - Anything that reads the address bar (`searchParams`), cookies or other per-request data must sit inside a `<Suspense>` boundary, otherwise the build fails.
 - The server does not know the device's clock. Screens that depend on "now" use the `useNow()` hook (`lib/time/useNow.ts`) and show a placeholder on first paint.
 - Tailwind v4: tokens are in `app/globals.css` under `@theme`, there is no `tailwind.config` file. Text colours use the `ink` names (`text-ink`, `text-ink-secondary`).
+- **Hosting:** production address is `https://calendar-app-ruddy-pi.vercel.app`; Vercel redeploys on every push to `main`. Vercel first detected the project as plain "Node" and failed with "No entrypoint found"; `vercel.json` with `{"framework": "nextjs"}` fixes that, so keep the file.
+- **Git:** the assistant commits and pushes to `main` itself after each working step (owner approved).
 - Checks before every commit: `npm run lint`, `npm run typecheck`, `npm run build`. Format with `npm run format`.
-- Dependencies in use: `next`, `react`, `tailwindcss`, `lucide-react`, `prettier` (+ Tailwind plugin). Planned and awaiting the owner's OK: `@supabase/supabase-js`, `@supabase/ssr`, `web-push`, `vitest`.
+- Dependencies in use: `next`, `react`, `tailwindcss`, `lucide-react`, `prettier` (+ Tailwind plugin). Approved for milestone 2: `@supabase/supabase-js`, `@supabase/ssr`. Planned and awaiting the owner's OK: `web-push`, `vitest`.
 
 ## 10. Work rules for every session
 
