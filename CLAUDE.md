@@ -236,7 +236,9 @@ Names only; values go in Vercel and in a local `.env.local` that is never commit
 **Status**
 
 - [x] 1. Layout shell with sample data (Today timeline, Inbox, People, Settings, tab bar / sidebar, "+" sheet). Sample data lives in `lib/demo/data.ts` and is deleted once real data replaces it.
-- [ ] 2–9 not started.
+- [x] Setup for milestone 2 done (2026-11-16): Supabase project, Google Cloud project `ply-calendar` (Calendar API on, consent screen in Testing with the owner as test user, scope `calendar.readonly`, web client "Ply Web"), Google provider on in Supabase, Supabase Site URL + redirect URLs set, all 6 milestone-2 variables in Vercel.
+- [ ] 2a sign-in, 2b real calendar, 3–9 not started.
+- **To do after 2a works:** Google Auth Platform → Audience → **Publish app** (removes the 7-day token expiry of Testing mode; no verification needed).
 
 **Product decisions (confirmed by the owner):** name "Ply"; new people are created when a debrief is saved, not on calendar sync; relationship tone is three tags (warm / neutral / cold); no debrief push for meetings with more than 10 attendees; 24-hour clock and day-month dates.
 
@@ -247,7 +249,7 @@ Names only; values go in Vercel and in a local `.env.local` that is never commit
 - The server does not know the device's clock. Screens that depend on "now" use the `useNow()` hook (`lib/time/useNow.ts`) and show a placeholder on first paint.
 - Tailwind v4: tokens are in `app/globals.css` under `@theme`, there is no `tailwind.config` file. Text colours use the `ink` names (`text-ink`, `text-ink-secondary`).
 - **Hosting:** production address is `https://calendar-app-ruddy-pi.vercel.app`; Vercel redeploys on every push to `main`. Vercel first detected the project as plain "Node" and failed with "No entrypoint found"; `vercel.json` with `{"framework": "nextjs"}` fixes that, so keep the file.
-- **Supabase:** project URL `https://rwejifhvpavrjutflaqd.supabase.co`, region West EU (Ireland). The project is linked to this GitHub repository through Supabase's GitHub integration; migration files use timestamp names (`YYYYMMDDHHMMSS_name.sql`) so they work with it.
+- **Supabase:** project URL `https://rwejifhvpavrjutflaqd.supabase.co`, region West EU (Ireland). The project is linked to this GitHub repository through Supabase's GitHub integration; migration files use timestamp names (`YYYYMMDDHHMMSS_name.sql`) so they work with it. Its **"Deploy to production" switch is OFF**, so migrations are NOT applied automatically: the owner pastes each new migration file into Supabase → **SQL Editor** → **Run**. Every migration is written to be safe to run twice (`if not exists`, `create or replace`, `drop policy if exists`), in case that switch is turned on later.
 - **Git:** the assistant commits and pushes to `main` itself after each working step (owner approved).
 - Checks before every commit: `npm run lint`, `npm run typecheck`, `npm run build`. Format with `npm run format`.
 - Dependencies in use: `next`, `react`, `tailwindcss`, `lucide-react`, `prettier` (+ Tailwind plugin). Approved for milestone 2: `@supabase/supabase-js`, `@supabase/ssr`, `vitest`. Planned and awaiting the owner's OK: `web-push`.
