@@ -84,6 +84,7 @@ Supabase Postgres (RLS on every table)   │
 │  ├─ manifest.ts            PWA manifest
 │  ├─ page.tsx               landing + "Continue with Google" (signed-out visitors only)
 │  ├─ privacy/page.tsx       public privacy policy (Google requires it to publish the OAuth app)
+│  ├─ meetings/[id]/         full-screen Debrief (no tab bar): page.tsx loads, actions.ts saves/deletes
 │  ├─ auth/actions.ts        server actions: signInWithGoogle, signOut
 │  ├─ auth/callback/route.ts sign-in return; captures and encrypts the refresh token
 │  ├─ onboarding/            3 onboarding screens
@@ -91,26 +92,27 @@ Supabase Postgres (RLS on every table)   │
 │  │  ├─ today/              timeline (also handles ?date=); loadDay.ts syncs + loads the day
 │  │  ├─ inbox/
 │  │  ├─ people/  people/[id]/
-│  │  ├─ meetings/[id]/debrief/   meetings/[id]/prep/
 │  │  └─ settings/
 │  └─ api/
 │     ├─ cron/tick/route.ts  called by pg_cron; sync + notifications
 │     ├─ push/subscribe/route.ts
 │     └─ export/route.ts     JSON / CSV export
 ├─ components/
-│  ├─ ui/                    Button, Card, Chip, Avatar, Sheet, StatusPill, EmptyState, PageHeader, Logo (later: Toast, TextAreaWithMic)
+│  ├─ ui/                    Button, Card, Chip, Avatar, Sheet, StatusPill, EmptyState, PageHeader, Logo, Toast (later: TextAreaWithMic)
 │  ├─ nav/                   NavLinks (tab bar + sidebar), Fab
 │  ├─ timeline/              TodayView, DayHeader (title + week strip), Timeline, MeetingCard
 │  ├─ inbox/  people/        InboxList, PeopleList
 │  ├─ auth/  settings/       SignInError, AccountSection (email, calendar status, sign out)
 │  ├─ calendar/              ReconnectBanner, SyncFailedNote
+│  ├─ debrief/               DebriefForm, PersonPicker
 │  └─ notes/                 NoteCard, FollowUpList (later)
 ├─ lib/
 │  ├─ config.ts              APP_NAME and other constants
 │  ├─ supabase/              env.ts, client.ts (browser), server.ts (as the user), admin.ts (secret key)
-│  ├─ data/                  repository layer: profile.ts, meetings.ts (as the user), calendarSync.ts (secret key, sync only); later people, notes, followUps, push
+│  ├─ data/                  repository layer: profile.ts, meetings.ts, people.ts, debrief.ts (as the user), calendarSync.ts (secret key, sync only); later push
 │  ├─ calendar/              types.ts (CalendarProvider), google.ts, filter.ts (pure rules), sync.ts
-│  ├─ matching/              names.ts (name from email); attendee → person matching in step 4
+│  ├─ matching/              names.ts (name from email), participants.ts (invite attendees → person chips by email)
+│  ├─ debrief/               validate.ts — checks Debrief input on the server
 │  ├─ notifications/         rules.ts (pure), send.ts (web push)
 │  ├─ time/                  date keys + time zone helpers (index.ts), useNow hook
 │  ├─ timeline/              layout.ts — where cards sit on the timeline (pure)
@@ -120,7 +122,7 @@ Supabase Postgres (RLS on every table)   │
 │  └─ speech/                Web Speech wrapper
 ├─ public/                   icons, sw.js
 ├─ supabase/migrations/      timestamped SQL files — the only way the database changes
-└─ tests/                    crypto, time, calendar-filter, calendar-sync, names; later matching + notification rules
+└─ tests/                    crypto, time, calendar-filter, calendar-sync, names, participants, debrief-validate; later notification rules
 ```
 
 ## 5. Database schema
@@ -138,7 +140,7 @@ All tables have row-level security on. Standard policy: `user_id = auth.uid()` f
 | `meeting_participants` | `meeting_id`, `person_id`, `user_id`                                                                                                                                                                                                                                                                                         | People confirmed (or auto-matched by email) for a meeting.                                                          |
 | `notes`                | `id`, `user_id`, `meeting_id` (nullable), `body`, `tone` (nullable: `warm`/`neutral`/`cold`), timestamps                                                                                                                                                                                                                     | `meeting_id` null = quick note.                                                                                     |
 | `note_people`          | `note_id`, `person_id`, `user_id`                                                                                                                                                                                                                                                                                            | Who a note is about — used for **every** note.                                                                      |
-| `follow_ups`           | `id`, `user_id`, `note_id` (nullable), `person_id`, `text`, `done`, `created_at`, `done_at`                                                                                                                                                                                                                                  |                                                                                                                     |
+| `follow_ups`           | `id`, `user_id`, `note_id` (nullable), `person_id` (nullable), `text`, `done`, `created_at`, `done_at`                                                                                                                                                                                                                       |                                                                                                                     |
 | `push_subscriptions`   | `id`, `user_id`, `endpoint` (unique), `p256dh`, `auth`, `device_label`, `created_at`                                                                                                                                                                                                                                         | One row per device.                                                                                                 |
 | `notifications_log`    | `id`, `user_id`, `type` (`debrief`/`evening`/`prep`), `meeting_id` (nullable), `dedupe_key`, `sent_at`                                                                                                                                                                                                                       | Unique on (`user_id`, `dedupe_key`), e.g. `prep:<meeting id>` or `evening:2026-11-11`. Makes duplicates impossible. |
 
@@ -151,6 +153,9 @@ All tables have row-level security on. Standard policy: `user_id = auth.uid()` f
 5. **`calendars` table added** for the "choose calendars to sync" setting.
 6. **`dedupe_key` on `notifications_log`.** The evening check has no meeting id, so a text key covers all three notification types with one uniqueness rule.
 7. **`extra_emails` on the profile** so my other addresses are also excluded from attendees.
+8. **One note per meeting** (unique index on `notes.meeting_id`). Editing a debrief edits that note.
+9. **`follow_ups.person_id` is nullable.** It is set when the note is about exactly one person; otherwise the follow-up belongs to everyone in `note_people`.
+10. **Debriefs are saved by a database function** (`save_debrief`, `delete_debrief`, security invoker so row-level security still applies). Note, people, participants and follow-ups are written in one transaction: all or nothing. New people whose email is already known reuse that person.
 
 **Calendar sync rules**
 
@@ -247,7 +252,10 @@ Names only; values go in Vercel and in a local `.env.local` that is never commit
 - [x] 2a. Google sign-in: landing page, `proxy.ts` guard, encrypted refresh token, `profiles` + `google_tokens` migration, account section in Settings. Verified end to end against a simulated Supabase server; **awaiting the owner's test with the real Google account**.
 - [x] 2a confirmed working by the owner on the live site (2026-11-17).
 - [x] 2b. Real calendar on Today: `calendars` + `meetings` migration, Google reader, filter rules, sync on page load (at most every 2 minutes), user's time zone from Google, Reconnect banner. Verified with unit tests and a browser test against simulated data; **awaiting the owner's test with the real calendar**.
-- [ ] 3–9 not started.
+- [x] 2b confirmed working by the owner (2026-11-17), after switching on events without attendees.
+- [x] 3a. Debrief screen: tap a meeting → `/meetings/[id]`; people chips (pre-filled from the invite by email, add existing or new, remove), note text, optional tone (warm/neutral/cold) and follow-ups, Save → "Saved to N people." toast; edit and delete. Migration `20261117150000_people_notes_follow_ups.sql` tested on a local Postgres (all migrations run twice; RLS checked with two users). **Awaiting the owner's test.**
+- [ ] 3b. The "+" button: manual meeting and quick note.
+- [ ] 4–9 not started.
 - [x] Google OAuth app published (2026-11-17): status **In production**, unverified on purpose (no verification submitted; the "Your app requires verification" banner in Google Cloud can be ignored for personal use, up to 100 users). Branding has home page `https://calendar-app-ruddy-pi.vercel.app` and privacy policy `/privacy`; no logo (a logo triggers brand verification). Refresh tokens no longer expire after 7 days once the owner signs in again after publishing.
 
 **Product decisions (confirmed by the owner):** show every timed calendar event, including ones without attendees (2026-11-17; people are added by hand in Ply); name "Ply"; new people are created when a debrief is saved, not on calendar sync; relationship tone is three tags (warm / neutral / cold); no debrief push for meetings with more than 10 attendees; 24-hour clock and day-month dates.
@@ -269,6 +277,8 @@ Names only; values go in Vercel and in a local `.env.local` that is never commit
 - **Sync outcomes:** `CalendarAuthError` (Google says `invalid_grant`, a 401/403, no stored token, or the token cannot be decrypted, e.g. after changing `TOKEN_ENCRYPTION_KEY`) → `google_connected = false` → Reconnect banner. Any other error → "Could not refresh" note and the stored meetings are shown.
 - **Time zone:** `profiles.time_zone`, filled from the primary Google calendar on the first sync; fallback `UTC`. All day/time maths goes through `lib/time` with an explicit zone. Date keys (`YYYY-MM-DD`) carry no zone.
 - Until People exist (step 4), meeting cards show attendees straight from the invite (`meetings.attendees`), with names from `lib/matching/names.ts`. The Inbox badge is hidden until step 5.
+- **Debrief screen state:** Next.js 16 keeps recently visited pages alive in the background, so a revisited page can keep its old form state. `DebriefForm` gets a `key` built from the note's `updated_at` and the meeting status, so it starts fresh after every save or delete. Without it, a person marked "(new)" could be created twice.
+- **Testing SQL locally:** Postgres 16 is installed in the container (`/usr/lib/postgresql/16/bin`). A throwaway database with stand-ins for Supabase's `auth.users`, `auth.uid()` and the `anon` / `authenticated` / `service_role` roles is enough to run every migration and test the functions with `set role authenticated` + `set request.jwt.claims`.
 - Checks before every commit: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build` (the build needs the two `NEXT_PUBLIC_SUPABASE_*` variables set; dummy values are fine). Format with `npm run format`.
 - Dependencies in use: `next`, `react`, `tailwindcss`, `lucide-react`, `prettier` (+ Tailwind plugin), `@supabase/supabase-js`, `@supabase/ssr`, `vitest`. Planned and awaiting the owner's OK: `web-push`.
 

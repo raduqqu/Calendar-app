@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { dateKeyAt } from "@/lib/time";
 import { useNow } from "@/lib/time/useNow";
@@ -25,6 +26,17 @@ export function TodayView({
   meetings,
 }: TodayViewProps) {
   const now = useNow();
+  const ready = now !== null;
+
+  // Show the useful part of the day: the current time today, otherwise the
+  // first meeting. Runs once per day shown.
+  useEffect(() => {
+    if (!ready) return;
+    const target =
+      document.querySelector("[data-scroll-anchor]") ??
+      document.querySelector("[data-first-meeting]");
+    target?.scrollIntoView({ block: "center" });
+  }, [ready, dateKey]);
 
   // The server cannot know the device's clock, so the first paint is a
   // quiet placeholder and the real day appears a moment later.

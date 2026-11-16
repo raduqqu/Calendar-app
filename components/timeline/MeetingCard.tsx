@@ -52,7 +52,7 @@ export function MeetingCard({
 
   return (
     <article
-      className={`rounded-card shadow-soft flex h-full flex-col justify-between overflow-hidden border px-3 py-2.5 ${status === "pending" ? "border-warning/50 bg-surface" : "border-border bg-surface"}`}
+      className={`rounded-card shadow-soft hover:border-primary/40 flex h-full flex-col justify-between overflow-hidden border px-3 py-2.5 ${status === "pending" ? "border-warning/50 bg-surface" : "border-border bg-surface"}`}
     >
       <div>
         <div className="flex items-start justify-between gap-2">

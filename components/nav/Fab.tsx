@@ -55,7 +55,8 @@ export function Fab() {
           ))}
         </ul>
         <p className="text-meta text-ink-secondary pb-2">
-          These switch on in step 3, when notes can be saved.
+          Coming in the next update. For now, tap a meeting on Today to write a
+          note.
         </p>
       </Sheet>
     </>

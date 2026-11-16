@@ -3,6 +3,8 @@ import { Avatar } from "./Avatar";
 
 interface ChipProps {
   name: string;
+  /** Extra words after the name, e.g. "(new)". Not used for the initials. */
+  suffix?: string;
   hasNotes?: boolean;
   /** Highlighted (light blue) when the person has notes or is selected. */
   selected?: boolean;
@@ -10,13 +12,22 @@ interface ChipProps {
 }
 
 /** A person shown as a small rounded pill with their initials. */
-export function Chip({ name, hasNotes, selected, onRemove }: ChipProps) {
+export function Chip({
+  name,
+  suffix,
+  hasNotes,
+  selected,
+  onRemove,
+}: ChipProps) {
   return (
     <span
       className={`text-meta text-ink inline-flex min-h-8 items-center gap-1.5 rounded-full border py-1 pr-3 pl-1 ${selected ? "bg-primary-light border-transparent" : "border-border bg-surface"}`}
     >
       <Avatar name={name} size="sm" hasNotes={hasNotes} />
-      <span className="truncate">{name}</span>
+      <span className="truncate">
+        {name}
+        {suffix && <span className="text-ink-secondary"> {suffix}</span>}
+      </span>
       {onRemove && (
         <button
           type="button"

@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { HOUR_HEIGHT, layoutDay } from "@/lib/timeline/layout";
-import { displayStatus, type Meeting } from "@/lib/types";
+import { formatTimeRange } from "@/lib/time";
+import { type DisplayStatus, displayStatus, type Meeting } from "@/lib/types";
 import { MeetingCard } from "./MeetingCard";
 
 /** Width of the hour labels on the left, and where the blue line sits. */
@@ -13,6 +15,30 @@ interface TimelineProps {
   meetings: Meeting[];
   nowMs: number;
   isToday: boolean;
+}
+
+const STATUS_WORDS: Record<DisplayStatus, string> = {
+  upcoming: "upcoming",
+  pending: "debrief pending",
+  debriefed: "debriefed",
+  skipped: "skipped",
+};
+
+/** What a screen reader announces for a meeting card. */
+function linkLabel(
+  meeting: Meeting,
+  status: DisplayStatus,
+  timeZone: string,
+): string {
+  const people = meeting.participants.map((p) => p.name).join(", ");
+  return [
+    meeting.title,
+    formatTimeRange(meeting.startsAt, meeting.endsAt, timeZone),
+    STATUS_WORDS[status],
+    people && `with ${people}`,
+  ]
+    .filter(Boolean)
+    .join(", ");
 }
 
 export function Timeline({
@@ -84,19 +110,33 @@ export function Timeline({
                 style={{ left: -15 }}
               />
             )}
-            <MeetingCard
-              meeting={meeting}
-              status={displayStatus(meeting, nowMs)}
-              timeZone={timeZone}
-              tall={height >= TALL_CARD}
-              narrow={columns > 1}
-            />
+            <Link
+              data-first-meeting={
+                layout.items[0]?.meeting.id === meeting.id || undefined
+              }
+              href={`/meetings/${meeting.id}`}
+              aria-label={linkLabel(
+                meeting,
+                displayStatus(meeting, nowMs),
+                timeZone,
+              )}
+              className="rounded-card block h-full transition-transform duration-150 active:scale-[0.99]"
+            >
+              <MeetingCard
+                meeting={meeting}
+                status={displayStatus(meeting, nowMs)}
+                timeZone={timeZone}
+                tall={height >= TALL_CARD}
+                narrow={columns > 1}
+              />
+            </Link>
           </li>
         ))}
       </ol>
 
       {showNow && (
         <div
+          data-scroll-anchor
           className="pointer-events-none absolute right-0 z-10 flex items-center"
           style={{ top: nowTop - 4, left: GUTTER - 5 }}
           role="img"

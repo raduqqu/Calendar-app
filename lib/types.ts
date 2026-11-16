@@ -30,3 +30,28 @@ export function displayStatus(meeting: Meeting, nowMs: number): DisplayStatus {
   if (meeting.status !== "open") return meeting.status;
   return new Date(meeting.endsAt).getTime() <= nowMs ? "pending" : "upcoming";
 }
+
+export type Tone = "warm" | "neutral" | "cold";
+
+/** A person as offered in the "+ Add person" search. */
+export interface PersonOption {
+  id: string;
+  name: string;
+  organization: string | null;
+  emails: string[];
+}
+
+/**
+ * A person chip on the Debrief screen: either someone who already exists in
+ * People, or someone who will be created when the debrief is saved.
+ */
+export type ParticipantChip =
+  | { kind: "existing"; personId: string; name: string; hasNotes: boolean }
+  | { kind: "new"; key: string; name: string; email: string | null };
+
+export interface FollowUpItem {
+  /** Missing for follow-ups that are not saved yet. */
+  id?: string;
+  text: string;
+  done: boolean;
+}

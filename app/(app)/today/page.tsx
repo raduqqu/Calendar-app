@@ -5,6 +5,7 @@ import {
   SyncFailedNote,
 } from "@/components/calendar/CalendarBanners";
 import { TodayView } from "@/components/timeline/TodayView";
+import { Toast } from "@/components/ui/Toast";
 import { isDateKey } from "@/lib/time";
 import { loadDay } from "./loadDay";
 
@@ -14,7 +15,8 @@ type SearchParams = PageProps<"/today">["searchParams"];
 
 /** Reads the chosen day from the address bar (/today?date=2026-11-12). */
 async function SelectedDay({ searchParams }: { searchParams: SearchParams }) {
-  const { date, notice } = await searchParams;
+  const { date, notice, saved } = await searchParams;
+  const savedCount = typeof saved === "string" ? Number(saved) : NaN;
   const day = await loadDay(isDateKey(date) ? date : null);
 
   return (
@@ -37,6 +39,16 @@ async function SelectedDay({ searchParams }: { searchParams: SearchParams }) {
         dayStartMs={day.dayStartMs}
         meetings={day.meetings}
       />
+      {Number.isInteger(savedCount) && savedCount >= 0 && (
+        <Toast
+          removeParam="saved"
+          message={
+            savedCount === 0
+              ? "Saved."
+              : `Saved to ${savedCount} ${savedCount === 1 ? "person" : "people"}.`
+          }
+        />
+      )}
     </>
   );
 }
