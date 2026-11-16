@@ -83,6 +83,7 @@ Supabase Postgres (RLS on every table)   │
 │  ├─ globals.css            Tailwind + design tokens (@theme)
 │  ├─ manifest.ts            PWA manifest
 │  ├─ page.tsx               landing + "Continue with Google" (signed-out visitors only)
+│  ├─ privacy/page.tsx       public privacy policy (Google requires it to publish the OAuth app)
 │  ├─ auth/actions.ts        server actions: signInWithGoogle, signOut
 │  ├─ auth/callback/route.ts sign-in return; captures and encrypts the refresh token
 │  ├─ onboarding/            3 onboarding screens
@@ -246,7 +247,7 @@ Names only; values go in Vercel and in a local `.env.local` that is never commit
 - [x] 2a confirmed working by the owner on the live site (2026-11-17).
 - [x] 2b. Real calendar on Today: `calendars` + `meetings` migration, Google reader, filter rules, sync on page load (at most every 2 minutes), user's time zone from Google, Reconnect banner. Verified with unit tests and a browser test against simulated data; **awaiting the owner's test with the real calendar**.
 - [ ] 3–9 not started.
-- **To do after 2a works:** Google Auth Platform → Audience → **Publish app** (removes the 7-day token expiry of Testing mode; no verification needed).
+- **In progress:** publishing the Google OAuth app (removes the 7-day token expiry of Testing mode). Google requires Branding → App home page `https://calendar-app-ruddy-pi.vercel.app` and Privacy policy `https://calendar-app-ruddy-pi.vercel.app/privacy` first. No logo is uploaded on purpose: a logo triggers Google's brand verification. The app stays unverified (users see a warning), which is fine for personal use.
 
 **Product decisions (confirmed by the owner):** name "Ply"; new people are created when a debrief is saved, not on calendar sync; relationship tone is three tags (warm / neutral / cold); no debrief push for meetings with more than 10 attendees; 24-hour clock and day-month dates.
 

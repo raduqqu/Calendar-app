@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Suspense } from "react";
 import { signInWithGoogle } from "@/app/auth/actions";
 import { SignInError } from "@/components/auth/SignInError";
@@ -34,6 +35,11 @@ export default function LandingPage({ searchParams }: PageProps<"/">) {
         <p className="text-meta text-ink-secondary mt-4">
           {APP_NAME} asks for read-only access to your calendar. It can never
           change or delete your events.
+        </p>
+        <p className="text-meta mt-6">
+          <Link href="/privacy" className="text-ink-secondary underline">
+            Privacy policy
+          </Link>
         </p>
       </div>
     </main>
