@@ -9,8 +9,21 @@ type SearchParams = PageProps<"/today">["searchParams"];
 
 /** Reads the chosen day from the address bar (/today?date=2026-11-12). */
 async function SelectedDay({ searchParams }: { searchParams: SearchParams }) {
-  const { date } = await searchParams;
-  return <TodayView dateKey={isDateKey(date) ? date : null} />;
+  const { date, notice } = await searchParams;
+  return (
+    <>
+      {notice === "calendar" && (
+        <p
+          role="alert"
+          className="text-meta bg-warning-light text-warning-ink rounded-button mt-4 px-3 py-2"
+        >
+          You are signed in, but the Google Calendar connection could not be
+          saved. Sign out in Settings and sign in again.
+        </p>
+      )}
+      <TodayView dateKey={isDateKey(date) ? date : null} />
+    </>
+  );
 }
 
 function Placeholder() {

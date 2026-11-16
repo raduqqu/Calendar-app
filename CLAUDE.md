@@ -75,13 +75,16 @@ Supabase Postgres (RLS on every table)   │
 ├─ README.md                 run locally, env vars, deploy
 ├─ .env.example              variable names only, no values
 ├─ vercel.json               tells Vercel this is a Next.js app (do not delete)
+├─ proxy.ts                  runs before every request: refreshes the session, guards the app screens
+├─ vitest.config.mts         test runner settings
 ├─ docs/SETUP.md             click-by-click account setup
 ├─ app/
 │  ├─ layout.tsx             fonts, global shell
 │  ├─ globals.css            Tailwind + design tokens (@theme)
 │  ├─ manifest.ts            PWA manifest
-│  ├─ (marketing)/page.tsx   landing + "Continue with Google"
-│  ├─ auth/callback/route.ts sign-in return; captures refresh token
+│  ├─ page.tsx               landing + "Continue with Google" (signed-out visitors only)
+│  ├─ auth/actions.ts        server actions: signInWithGoogle, signOut
+│  ├─ auth/callback/route.ts sign-in return; captures and encrypts the refresh token
 │  ├─ onboarding/            3 onboarding screens
 │  ├─ (app)/                 signed-in area with TabBar / sidebar
 │  │  ├─ today/              timeline (also handles ?date=)
@@ -98,10 +101,11 @@ Supabase Postgres (RLS on every table)   │
 │  ├─ nav/                   NavLinks (tab bar + sidebar), Fab
 │  ├─ timeline/              TodayView, DayHeader (title + week strip), Timeline, MeetingCard
 │  ├─ inbox/  people/        InboxList, PeopleList
+│  ├─ auth/  settings/       SignInError, AccountSection (email, calendar status, sign out)
 │  └─ notes/                 NoteCard, FollowUpList (later)
 ├─ lib/
 │  ├─ config.ts              APP_NAME and other constants
-│  ├─ supabase/              browser, server and admin clients
+│  ├─ supabase/              env.ts, client.ts (browser), server.ts (as the user), admin.ts (secret key)
 │  ├─ data/                  repository layer (people, meetings, notes, followUps, settings, push)
 │  ├─ calendar/              types.ts (CalendarProvider), google.ts, filter.ts, sync.ts
 │  ├─ matching/              attendee → person matching, name parsing
@@ -114,7 +118,7 @@ Supabase Postgres (RLS on every table)   │
 │  └─ speech/                Web Speech wrapper
 ├─ public/                   icons, sw.js
 ├─ supabase/migrations/      numbered SQL files — the only way the database changes
-└─ tests/                    matching, notification rules, time zones
+└─ tests/                    crypto (done); matching, notification rules, time zones (later); stubs/
 ```
 
 ## 5. Database schema
@@ -237,7 +241,8 @@ Names only; values go in Vercel and in a local `.env.local` that is never commit
 
 - [x] 1. Layout shell with sample data (Today timeline, Inbox, People, Settings, tab bar / sidebar, "+" sheet). Sample data lives in `lib/demo/data.ts` and is deleted once real data replaces it.
 - [x] Setup for milestone 2 done (2026-11-16): Supabase project, Google Cloud project `ply-calendar` (Calendar API on, consent screen in Testing with the owner as test user, scope `calendar.readonly`, web client "Ply Web"), Google provider on in Supabase, Supabase Site URL + redirect URLs set, all 6 milestone-2 variables in Vercel.
-- [ ] 2a sign-in, 2b real calendar, 3–9 not started.
+- [x] 2a. Google sign-in: landing page, `proxy.ts` guard, encrypted refresh token, `profiles` + `google_tokens` migration, account section in Settings. Verified end to end against a simulated Supabase server; **awaiting the owner's test with the real Google account**.
+- [ ] 2b real calendar, 3–9 not started.
 - **To do after 2a works:** Google Auth Platform → Audience → **Publish app** (removes the 7-day token expiry of Testing mode; no verification needed).
 
 **Product decisions (confirmed by the owner):** name "Ply"; new people are created when a debrief is saved, not on calendar sync; relationship tone is three tags (warm / neutral / cold); no debrief push for meetings with more than 10 attendees; 24-hour clock and day-month dates.
@@ -251,8 +256,11 @@ Names only; values go in Vercel and in a local `.env.local` that is never commit
 - **Hosting:** production address is `https://calendar-app-ruddy-pi.vercel.app`; Vercel redeploys on every push to `main`. Vercel first detected the project as plain "Node" and failed with "No entrypoint found"; `vercel.json` with `{"framework": "nextjs"}` fixes that, so keep the file.
 - **Supabase:** project URL `https://rwejifhvpavrjutflaqd.supabase.co`, region West EU (Ireland). The project is linked to this GitHub repository through Supabase's GitHub integration; migration files use timestamp names (`YYYYMMDDHHMMSS_name.sql`) so they work with it. Its **"Deploy to production" switch is OFF**, so migrations are NOT applied automatically: the owner pastes each new migration file into Supabase → **SQL Editor** → **Run**. Every migration is written to be safe to run twice (`if not exists`, `create or replace`, `drop policy if exists`), in case that switch is turned on later.
 - **Git:** the assistant commits and pushes to `main` itself after each working step (owner approved).
-- Checks before every commit: `npm run lint`, `npm run typecheck`, `npm run build`. Format with `npm run format`.
-- Dependencies in use: `next`, `react`, `tailwindcss`, `lucide-react`, `prettier` (+ Tailwind plugin). Approved for milestone 2: `@supabase/supabase-js`, `@supabase/ssr`, `vitest`. Planned and awaiting the owner's OK: `web-push`.
+- **Auth flow:** the "Continue with Google" form calls the `signInWithGoogle` server action → Google → Supabase → `/auth/callback`, which swaps the code for a session and stores the encrypted Google refresh token with the secret key. `proxy.ts` redirects signed-out visitors away from app screens and signed-in visitors away from the landing page.
+- `lib/supabase/server.ts` calls `await connection()` before creating the client. Without it Next.js tries to prepare signed-in content ahead of time and logs "unstable value `Date.now()`" errors.
+- Server-only modules start with `import "server-only"` (built into Next.js, no package needed; tests replace it with `tests/stubs/server-only.ts`).
+- Checks before every commit: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build` (the build needs the two `NEXT_PUBLIC_SUPABASE_*` variables set; dummy values are fine). Format with `npm run format`.
+- Dependencies in use: `next`, `react`, `tailwindcss`, `lucide-react`, `prettier` (+ Tailwind plugin), `@supabase/supabase-js`, `@supabase/ssr`, `vitest`. Planned and awaiting the owner's OK: `web-push`.
 
 ## 10. Work rules for every session
 

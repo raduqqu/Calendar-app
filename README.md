@@ -7,7 +7,7 @@ A calendar-linked relationship memory app. It reads your Google Calendar, asks w
 
 ## Current state
 
-Milestone 1 of 9: the layout shell with sample data. No sign-in, no database yet.
+Milestone 2a of 9: Google sign-in works; the screens still show sample meetings and people.
 
 ## Run it on your computer
 
@@ -31,11 +31,12 @@ Then open http://localhost:3000.
 | `npm run build`     | Build the production version (also catches errors) |
 | `npm run lint`      | Check the code for common mistakes                 |
 | `npm run typecheck` | Check the TypeScript types                         |
+| `npm test`          | Run the automated tests                            |
 | `npm run format`    | Tidy the formatting of every file                  |
 
 ## Environment variables
 
-None are needed yet. From milestone 2, copy `.env.example` to `.env.local` and fill in the values described in [docs/SETUP.md](docs/SETUP.md). Never commit `.env.local`.
+Copy `.env.example` to `.env.local` and fill in the values described in [docs/SETUP.md](docs/SETUP.md). Never commit `.env.local`.
 
 ## Deploy
 

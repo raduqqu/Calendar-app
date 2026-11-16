@@ -1,4 +1,9 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import {
+  AccountSection,
+  AccountSectionPlaceholder,
+} from "@/components/settings/AccountSection";
 import { Card } from "@/components/ui/Card";
 import { PageHeader, SampleNote } from "@/components/ui/PageHeader";
 
@@ -19,7 +24,7 @@ const sections: { title: string; rows: { label: string; value: string }[] }[] =
     {
       title: "Calendar",
       rows: [
-        { label: "Google Calendar", value: "Not connected" },
+        { label: "Calendars to sync", value: "Primary" },
         { label: "Include solo events", value: "Off" },
       ],
     },
@@ -34,10 +39,6 @@ const sections: { title: string; rows: { label: string; value: string }[] }[] =
         { label: "Delete account and data", value: "" },
       ],
     },
-    {
-      title: "Account",
-      rows: [{ label: "Sign out", value: "" }],
-    },
   ];
 
 export default function SettingsPage() {
@@ -45,7 +46,8 @@ export default function SettingsPage() {
     <>
       <PageHeader title="Settings" />
       <SampleNote>
-        A preview of what will be here. Settings become editable in step 8.
+        Your account is live. The other settings are a preview and become
+        editable in step 8.
       </SampleNote>
       <div className="flex flex-col gap-6">
         {sections.map((section) => (
@@ -73,6 +75,9 @@ export default function SettingsPage() {
             </Card>
           </section>
         ))}
+        <Suspense fallback={<AccountSectionPlaceholder />}>
+          <AccountSection />
+        </Suspense>
       </div>
     </>
   );
