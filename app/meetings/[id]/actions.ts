@@ -1,5 +1,6 @@
 "use server";
 
+import { refresh } from "next/cache";
 import { deleteDebrief, saveDebrief } from "@/lib/data/debrief";
 import { isUuid, parseDebriefInput } from "@/lib/debrief/validate";
 
@@ -14,6 +15,7 @@ export async function saveDebriefAction(
   if (!parsed.ok) return parsed;
   try {
     const { peopleCount } = await saveDebrief(parsed.value);
+    refresh();
     return { ok: true, peopleCount };
   } catch (error) {
     console.error("Saving a debrief failed:", error);
@@ -27,6 +29,7 @@ export async function deleteDebriefAction(
   if (!isUuid(meetingId)) return { ok: false };
   try {
     await deleteDebrief(meetingId);
+    refresh();
     return { ok: true };
   } catch (error) {
     console.error("Deleting a debrief failed:", error);

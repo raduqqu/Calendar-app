@@ -20,10 +20,24 @@ import type { ParticipantChip } from "@/lib/types";
 export const metadata: Metadata = { title: "Debrief" };
 
 type Params = PageProps<"/meetings/[id]">["params"];
+type SearchParams = PageProps<"/meetings/[id]">["searchParams"];
 
-async function Debrief({ params }: { params: Params }) {
+/** Only a person's profile is accepted as a place to return to. */
+const PERSON_PATH =
+  /^\/people\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+async function Debrief({
+  params,
+  searchParams,
+}: {
+  params: Params;
+  searchParams: SearchParams;
+}) {
   await connection();
   const { id } = await params;
+  const { back } = await searchParams;
+  const backToPerson =
+    typeof back === "string" && PERSON_PATH.test(back) ? back : null;
   if (!isUuid(id)) notFound();
 
   const profile = await getMyProfile();
@@ -63,7 +77,8 @@ async function Debrief({ params }: { params: Params }) {
       meetingId={meeting.id}
       title={meeting.title}
       when={`${formatLongDate(dateKey)} · ${formatTimeRange(meeting.startsAt, meeting.endsAt, timeZone)}`}
-      backHref={`/today?date=${dateKey}`}
+      backHref={backToPerson ?? `/today?date=${dateKey}`}
+      toastOnReturn={!backToPerson}
       removedFromCalendar={meeting.removedFromCalendar}
       people={people}
       initialParticipants={participants}
@@ -86,10 +101,13 @@ function Placeholder() {
 }
 
 /** Full-screen Debrief for one meeting (no tab bar, so the keyboard has room). */
-export default function DebriefPage({ params }: PageProps<"/meetings/[id]">) {
+export default function DebriefPage({
+  params,
+  searchParams,
+}: PageProps<"/meetings/[id]">) {
   return (
     <Suspense fallback={<Placeholder />}>
-      <Debrief params={params} />
+      <Debrief params={params} searchParams={searchParams} />
     </Suspense>
   );
 }

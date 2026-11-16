@@ -6,11 +6,11 @@ import { getMeetingsBetween } from "@/lib/data/meetings";
 import { getMyProfile } from "@/lib/data/profile";
 import {
   addDays,
-  dateKeyAt,
   FALLBACK_TIME_ZONE,
   isValidTimeZone,
   startOfDay,
 } from "@/lib/time";
+import { todayIn } from "@/lib/time/today";
 import type { Meeting } from "@/lib/types";
 
 export interface DayData {
@@ -39,7 +39,7 @@ export async function loadDay(requestedKey: string | null): Promise<DayData> {
   }
   if (!isValidTimeZone(timeZone)) timeZone = FALLBACK_TIME_ZONE;
 
-  const dateKey = requestedKey ?? dateKeyAt(Date.now(), timeZone);
+  const dateKey = requestedKey ?? todayIn(timeZone);
   const dayStartMs = startOfDay(dateKey, timeZone);
   const dayEndMs = startOfDay(addDays(dateKey, 1), timeZone);
   const meetings = await getMeetingsBetween(

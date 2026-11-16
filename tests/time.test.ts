@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   addDays,
   dateKeyAt,
+  daysBetween,
   dayOfWeek,
   formatLongDate,
   formatTime,
@@ -38,6 +39,13 @@ describe("date keys", () => {
     expect(isDateKey("2026-11-11")).toBe(true);
     expect(isDateKey("2026-02-30")).toBe(false);
     expect(isDateKey("11/11/2026")).toBe(false);
+  });
+
+  it("counts whole days between two dates", () => {
+    expect(daysBetween("2026-11-14", "2026-11-17")).toBe(3);
+    expect(daysBetween("2026-12-31", "2027-01-01")).toBe(1);
+    expect(daysBetween("2026-03-28", "2026-03-30")).toBe(2);
+    expect(daysBetween("2026-11-17", "2026-11-14")).toBe(-3);
   });
 
   it("formats a long date", () => {

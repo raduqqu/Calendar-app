@@ -70,6 +70,23 @@ export function formatShortDate(key: string): string {
   return formatKey(key, { weekday: "short", day: "numeric", month: "short" });
 }
 
+/** "Sat 14 Nov 2026" */
+export function formatDateWithYear(key: string): string {
+  return formatKey(key, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+/** Whole days from one date key to another (negative if `to` is earlier). */
+export function daysBetween(from: string, to: string): number {
+  return Math.round(
+    (keyToUtc(to).getTime() - keyToUtc(from).getTime()) / DAY_MS,
+  );
+}
+
 /** Single letter for the week strip: M T W T F S S */
 export function weekdayInitial(key: string): string {
   return formatKey(key, { weekday: "short" }).charAt(0);

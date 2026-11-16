@@ -3,6 +3,7 @@
 import { CalendarDays, Inbox, Settings, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Suspense } from "react";
 
 const items = [
   { href: "/today", label: "Today", icon: CalendarDays },
@@ -21,19 +22,41 @@ function Badge({ count }: { count: number }) {
   );
 }
 
+interface NavProps {
+  variant: "bar" | "side";
+}
+
 /**
  * The four main destinations. Shown as a bottom tab bar on phones
  * ("bar") and as a vertical list in the desktop sidebar ("side").
  */
-export function NavLinks({ variant }: { variant: "bar" | "side" }) {
-  const pathname = usePathname();
+export function NavLinks({ variant }: NavProps) {
+  // Reading the current address has to wait for the real request, so the
+  // links appear at once and the highlight follows a moment later.
+  return (
+    <Suspense fallback={<NavItems variant={variant} pathname={null} />}>
+      <NavItemsForCurrentPage variant={variant} />
+    </Suspense>
+  );
+}
+
+function NavItemsForCurrentPage({ variant }: NavProps) {
+  return <NavItems variant={variant} pathname={usePathname()} />;
+}
+
+function NavItems({
+  variant,
+  pathname,
+}: NavProps & { pathname: string | null }) {
   // The real count of meetings waiting for a debrief arrives in step 5.
   const pendingCount = 0;
 
   return (
     <ul className={variant === "bar" ? "flex" : "flex flex-col gap-1"}>
       {items.map(({ href, label, icon: Icon }) => {
-        const active = pathname === href || pathname.startsWith(`${href}/`);
+        const active =
+          pathname !== null &&
+          (pathname === href || pathname.startsWith(`${href}/`));
         const badge = href === "/inbox" ? pendingCount : 0;
 
         if (variant === "bar") {

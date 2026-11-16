@@ -24,6 +24,8 @@ interface DebriefFormProps {
   /** "Saturday, 14 November · 16:30 – 20:00" */
   when: string;
   backHref: string;
+  /** Show "Saved to N people." on the screen we return to (Today only). */
+  toastOnReturn: boolean;
   removedFromCalendar: boolean;
   people: PersonOption[];
   initialParticipants: ParticipantChip[];
@@ -127,7 +129,11 @@ export function DebriefForm(props: DebriefFormProps) {
         setError(result.error);
         return;
       }
-      router.push(`${props.backHref}&saved=${result.peopleCount}`);
+      router.push(
+        props.toastOnReturn
+          ? `${props.backHref}&saved=${result.peopleCount}`
+          : props.backHref,
+      );
     });
   }
 
