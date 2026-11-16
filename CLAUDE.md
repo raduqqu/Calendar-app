@@ -99,30 +99,29 @@ Supabase Postgres (RLS on every table)   │
 │     └─ export/route.ts     JSON / CSV export
 ├─ components/
 │  ├─ ui/                    Button, Card, Chip, Avatar, Sheet, StatusPill, EmptyState, PageHeader, Logo, Toast (later: TextAreaWithMic)
-│  ├─ nav/                   NavLinks (tab bar + sidebar), Fab
+│  ├─ nav/                   NavLinks (tab bar + sidebar), NavWithCount (adds the Inbox number), Fab
 │  ├─ timeline/              TodayView, DayHeader (title + week strip), Timeline, MeetingCard
-│  ├─ inbox/  people/        InboxList, PeopleList
+│  ├─ inbox/  people/        InboxList; PeopleList, PersonActions (edit + merge sheets)
 │  ├─ auth/  settings/       SignInError, AccountSection (email, calendar status, sign out)
 │  ├─ calendar/              ReconnectBanner, SyncFailedNote
 │  ├─ debrief/               DebriefForm, PersonPicker
-│  └─ notes/                 NoteCard, FollowUpList (later)
+│  └─ notes/                 NoteCard, FollowUpChecklist
 ├─ lib/
 │  ├─ config.ts              APP_NAME and other constants
 │  ├─ supabase/              env.ts, client.ts (browser), server.ts (as the user), admin.ts (secret key)
 │  ├─ data/                  repository layer: profile.ts, meetings.ts, people.ts, debrief.ts (as the user), calendarSync.ts (secret key, sync only); later push
 │  ├─ calendar/              types.ts (CalendarProvider), google.ts, filter.ts (pure rules), sync.ts
 │  ├─ matching/              names.ts (name from email), participants.ts (invite attendees → person chips by email)
-│  ├─ debrief/               validate.ts — checks Debrief input on the server
+│  ├─ debrief/  people/      validate.ts — checks Debrief and Edit-person input on the server
 │  ├─ notifications/         rules.ts (pure), send.ts (web push)
-│  ├─ time/                  date keys + time zone helpers (index.ts), useNow hook
+│  ├─ time/                  date keys + time zone helpers (index.ts), today.ts (server "today"), useNow hook
 │  ├─ timeline/              layout.ts — where cards sit on the timeline (pure)
-│  ├─ demo/                  sample data still used by Inbox (until step 5) and People (until step 4)
 │  ├─ types.ts               shared types (Meeting, PersonSummary, statuses)
 │  ├─ crypto/                encrypt / decrypt refresh token
 │  └─ speech/                Web Speech wrapper
 ├─ public/                   icons, sw.js
 ├─ supabase/migrations/      timestamped SQL files — the only way the database changes
-└─ tests/                    crypto, time, calendar-filter, calendar-sync, names, participants, debrief-validate; later notification rules
+└─ tests/                    crypto, time, calendar-filter, calendar-sync, names, participants, debrief-validate, person-validate; later notification rules
 ```
 
 ## 5. Database schema
@@ -155,7 +154,8 @@ All tables have row-level security on. Standard policy: `user_id = auth.uid()` f
 7. **`extra_emails` on the profile** so my other addresses are also excluded from attendees.
 8. **One note per meeting** (unique index on `notes.meeting_id`). Editing a debrief edits that note.
 9. **`follow_ups.person_id` is nullable.** It is set when the note is about exactly one person; otherwise the follow-up belongs to everyone in `note_people`.
-10. **Debriefs are saved by a database function** (`save_debrief`, `delete_debrief`, security invoker so row-level security still applies). Note, people, participants and follow-ups are written in one transaction: all or nothing. New people whose email is already known reuse that person.
+10. **`people_overview` view** (security invoker) gives each person's emails, last meeting, last note and note count in one read. **`update_person`** and **`merge_people`** are database functions for the same all-or-nothing reason as `save_debrief`.
+11. **Debriefs are saved by a database function** (`save_debrief`, `delete_debrief`, security invoker so row-level security still applies). Note, people, participants and follow-ups are written in one transaction: all or nothing. New people whose email is already known reuse that person.
 
 **Calendar sync rules**
 
@@ -254,8 +254,10 @@ Names only; values go in Vercel and in a local `.env.local` that is never commit
 - [x] 2b. Real calendar on Today: `calendars` + `meetings` migration, Google reader, filter rules, sync on page load (at most every 2 minutes), user's time zone from Google, Reconnect banner. Verified with unit tests and a browser test against simulated data; **awaiting the owner's test with the real calendar**.
 - [x] 2b confirmed working by the owner (2026-11-17), after switching on events without attendees.
 - [x] 3a. Debrief screen: tap a meeting → `/meetings/[id]`; people chips (pre-filled from the invite by email, add existing or new, remove), note text, optional tone (warm/neutral/cold) and follow-ups, Save → "Saved to N people." toast; edit and delete. Migration `20261117150000_people_notes_follow_ups.sql` tested on a local Postgres (all migrations run twice; RLS checked with two users). **Awaiting the owner's test.**
-- [ ] 3b. The "+" button: manual meeting and quick note.
-- [ ] 4–9 not started.
+- [x] 4. People (2026-11-18): real list (most recently seen first, search), person profile (details, About, open follow-ups with tick-to-complete, notes feed), edit, merge duplicates. Migration `20261118090000_people_overview_edit_merge.sql` tested on local Postgres. **Awaiting the owner's test.**
+- [x] 5. Inbox (2026-11-18): meetings from the last 14 days that ended and are still `open`, newest first; Debrief opens the meeting, Skip sets `status = 'skipped'` (stays on the timeline, can still be debriefed); the Inbox tab shows the count. All sample data is gone (`lib/demo` deleted). No migration needed. **Awaiting the owner's test.**
+- [ ] 3b. The "+" button: manual meeting and quick note. Next up.
+- [ ] 6–9 not started.
 - [x] Google OAuth app published (2026-11-17): status **In production**, unverified on purpose (no verification submitted; the "Your app requires verification" banner in Google Cloud can be ignored for personal use, up to 100 users). Branding has home page `https://calendar-app-ruddy-pi.vercel.app` and privacy policy `/privacy`; no logo (a logo triggers brand verification). Refresh tokens no longer expire after 7 days once the owner signs in again after publishing.
 
 **Product decisions (confirmed by the owner):** show every timed calendar event, including ones without attendees (2026-11-17; people are added by hand in Ply); name "Ply"; new people are created when a debrief is saved, not on calendar sync; relationship tone is three tags (warm / neutral / cold); no debrief push for meetings with more than 10 attendees; 24-hour clock and day-month dates.
@@ -276,7 +278,12 @@ Names only; values go in Vercel and in a local `.env.local` that is never commit
 - The sync uses the **secret key** (it must also work in the background with nobody signed in), so every query in `lib/data/calendarSync.ts` filters by `user_id` explicitly. Screen reads use the user's own client so row-level security applies.
 - **Sync outcomes:** `CalendarAuthError` (Google says `invalid_grant`, a 401/403, no stored token, or the token cannot be decrypted, e.g. after changing `TOKEN_ENCRYPTION_KEY`) → `google_connected = false` → Reconnect banner. Any other error → "Could not refresh" note and the stored meetings are shown.
 - **Time zone:** `profiles.time_zone`, filled from the primary Google calendar on the first sync; fallback `UTC`. All day/time maths goes through `lib/time` with an explicit zone. Date keys (`YYYY-MM-DD`) carry no zone.
-- Until People exist (step 4), meeting cards show attendees straight from the invite (`meetings.attendees`), with names from `lib/matching/names.ts`. The Inbox badge is hidden until step 5.
+- Meeting cards show the people confirmed in a debrief; before that, the attendees straight from the invite (`meetings.attendees`), with names from `lib/matching/names.ts`.
+- **Refreshing after a change:** server actions call `refresh()` from `next/cache`, which re-renders the current page and the layout (so the Inbox count updates). On plain navigation the layout is not re-fetched, so the count can lag until the next action or reload.
+- `usePathname()` (in `NavLinks`) needs its own `<Suspense>` on pages with a dynamic address such as `/people/[id]`, or the build fails.
+- Reading the clock inside a server component trips the lint rule `react-hooks/purity`; use `todayIn(timeZone)` from `lib/time/today.ts` or read it inside a `lib/data` function.
+- The Debrief screen returns to Today by default; `?back=/inbox` or `?back=/people/<id>` (only those two shapes are accepted) sends it back there instead.
+- The auto-mode safety check blocks downloading and running outside binaries (PostgREST was tried for more realistic tests), so screens are browser-tested against a small hand-written fake of Supabase's REST API, and SQL is tested on the local Postgres.
 - **Debrief screen state:** Next.js 16 keeps recently visited pages alive in the background, so a revisited page can keep its old form state. `DebriefForm` gets a `key` built from the note's `updated_at` and the meeting status, so it starts fresh after every save or delete. Without it, a person marked "(new)" could be created twice.
 - **Testing SQL locally:** Postgres 16 is installed in the container (`/usr/lib/postgresql/16/bin`). A throwaway database with stand-ins for Supabase's `auth.users`, `auth.uid()` and the `anon` / `authenticated` / `service_role` roles is enough to run every migration and test the functions with `set role authenticated` + `set request.jwt.claims`.
 - Checks before every commit: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build` (the build needs the two `NEXT_PUBLIC_SUPABASE_*` variables set; dummy values are fine). Format with `npm run format`.

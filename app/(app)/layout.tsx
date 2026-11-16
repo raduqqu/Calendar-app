@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Fab } from "@/components/nav/Fab";
-import { NavLinks } from "@/components/nav/NavLinks";
+import { NavWithCount } from "@/components/nav/NavWithCount";
 import { Logo } from "@/components/ui/Logo";
 import { APP_NAME } from "@/lib/config";
 
@@ -22,7 +22,7 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
           </span>
         </Link>
         <nav aria-label="Main">
-          <NavLinks variant="side" />
+          <NavWithCount variant="side" />
         </nav>
       </aside>
 
@@ -36,7 +36,7 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
         aria-label="Main"
         className="border-border bg-surface/95 fixed inset-x-0 bottom-0 z-20 border-t pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
       >
-        <NavLinks variant="bar" />
+        <NavWithCount variant="bar" />
       </nav>
     </div>
   );

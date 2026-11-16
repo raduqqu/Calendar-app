@@ -24,33 +24,33 @@ function Badge({ count }: { count: number }) {
 
 interface NavProps {
   variant: "bar" | "side";
+  /** Meetings waiting for a debrief; shown on the Inbox tab. */
+  pendingCount: number;
 }
 
 /**
  * The four main destinations. Shown as a bottom tab bar on phones
  * ("bar") and as a vertical list in the desktop sidebar ("side").
  */
-export function NavLinks({ variant }: NavProps) {
+export function NavLinks(props: NavProps) {
   // Reading the current address has to wait for the real request, so the
   // links appear at once and the highlight follows a moment later.
   return (
-    <Suspense fallback={<NavItems variant={variant} pathname={null} />}>
-      <NavItemsForCurrentPage variant={variant} />
+    <Suspense fallback={<NavItems {...props} pathname={null} />}>
+      <NavItemsForCurrentPage {...props} />
     </Suspense>
   );
 }
 
-function NavItemsForCurrentPage({ variant }: NavProps) {
-  return <NavItems variant={variant} pathname={usePathname()} />;
+function NavItemsForCurrentPage(props: NavProps) {
+  return <NavItems {...props} pathname={usePathname()} />;
 }
 
 function NavItems({
   variant,
+  pendingCount,
   pathname,
 }: NavProps & { pathname: string | null }) {
-  // The real count of meetings waiting for a debrief arrives in step 5.
-  const pendingCount = 0;
-
   return (
     <ul className={variant === "bar" ? "flex" : "flex flex-col gap-1"}>
       {items.map(({ href, label, icon: Icon }) => {

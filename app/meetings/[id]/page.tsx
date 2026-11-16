@@ -22,9 +22,9 @@ export const metadata: Metadata = { title: "Debrief" };
 type Params = PageProps<"/meetings/[id]">["params"];
 type SearchParams = PageProps<"/meetings/[id]">["searchParams"];
 
-/** Only a person's profile is accepted as a place to return to. */
-const PERSON_PATH =
-  /^\/people\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** Only the Inbox or a person's profile is accepted as a place to return to. */
+const RETURN_PATH =
+  /^\/(inbox|people\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
 
 async function Debrief({
   params,
@@ -36,8 +36,8 @@ async function Debrief({
   await connection();
   const { id } = await params;
   const { back } = await searchParams;
-  const backToPerson =
-    typeof back === "string" && PERSON_PATH.test(back) ? back : null;
+  const backTo =
+    typeof back === "string" && RETURN_PATH.test(back) ? back : null;
   if (!isUuid(id)) notFound();
 
   const profile = await getMyProfile();
@@ -77,8 +77,8 @@ async function Debrief({
       meetingId={meeting.id}
       title={meeting.title}
       when={`${formatLongDate(dateKey)} · ${formatTimeRange(meeting.startsAt, meeting.endsAt, timeZone)}`}
-      backHref={backToPerson ?? `/today?date=${dateKey}`}
-      toastOnReturn={!backToPerson}
+      backHref={backTo ?? `/today?date=${dateKey}`}
+      toastOnReturn={!backTo}
       removedFromCalendar={meeting.removedFromCalendar}
       people={people}
       initialParticipants={participants}
