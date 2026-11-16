@@ -247,7 +247,7 @@ Names only; values go in Vercel and in a local `.env.local` that is never commit
 - [x] 2a confirmed working by the owner on the live site (2026-11-17).
 - [x] 2b. Real calendar on Today: `calendars` + `meetings` migration, Google reader, filter rules, sync on page load (at most every 2 minutes), user's time zone from Google, Reconnect banner. Verified with unit tests and a browser test against simulated data; **awaiting the owner's test with the real calendar**.
 - [ ] 3–9 not started.
-- **In progress:** publishing the Google OAuth app (removes the 7-day token expiry of Testing mode). Google requires Branding → App home page `https://calendar-app-ruddy-pi.vercel.app` and Privacy policy `https://calendar-app-ruddy-pi.vercel.app/privacy` first. No logo is uploaded on purpose: a logo triggers Google's brand verification. The app stays unverified (users see a warning), which is fine for personal use.
+- [x] Google OAuth app published (2026-11-17): status **In production**, unverified on purpose (no verification submitted; the "Your app requires verification" banner in Google Cloud can be ignored for personal use, up to 100 users). Branding has home page `https://calendar-app-ruddy-pi.vercel.app` and privacy policy `/privacy`; no logo (a logo triggers brand verification). Refresh tokens no longer expire after 7 days once the owner signs in again after publishing.
 
 **Product decisions (confirmed by the owner):** name "Ply"; new people are created when a debrief is saved, not on calendar sync; relationship tone is three tags (warm / neutral / cold); no debrief push for meetings with more than 10 attendees; 24-hour clock and day-month dates.
 
