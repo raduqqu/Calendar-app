@@ -25,7 +25,7 @@ const sections: { title: string; rows: { label: string; value: string }[] }[] =
       title: "Calendar",
       rows: [
         { label: "Calendars to sync", value: "Primary" },
-        { label: "Include solo events", value: "Off" },
+        { label: "Events without attendees", value: "Shown" },
       ],
     },
     {

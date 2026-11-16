@@ -77,7 +77,7 @@ export async function getMyProfile(): Promise<Profile | null> {
         quietStart: "23:00:00",
         quietEnd: "07:00:00",
         dictationLang: "en",
-        includeSoloEvents: false,
+        includeSoloEvents: true,
         onboardingDone: false,
         googleConnected: false,
       };

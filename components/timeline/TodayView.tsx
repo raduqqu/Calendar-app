@@ -46,7 +46,7 @@ export function TodayView({
       {meetings.length === 0 ? (
         <EmptyState
           title={isToday ? "No meetings today" : "No meetings"}
-          description="Only meetings with other people show up here. Ran into someone or had a call? Add it with the + button."
+          description="Nothing in your calendar for this day. Ran into someone or had a call? Add it with the + button."
         />
       ) : (
         <Timeline
