@@ -1,5 +1,4 @@
 import { HOUR_HEIGHT, layoutDay } from "@/lib/timeline/layout";
-import { parseDateKey } from "@/lib/time";
 import { displayStatus, type Meeting } from "@/lib/types";
 import { MeetingCard } from "./MeetingCard";
 
@@ -8,14 +7,21 @@ const GUTTER = 52;
 const TALL_CARD = 104;
 
 interface TimelineProps {
-  dateKey: string;
+  /** The instant the day starts, in the user's time zone. */
+  dayStartMs: number;
+  timeZone: string;
   meetings: Meeting[];
   nowMs: number;
   isToday: boolean;
 }
 
-export function Timeline({ dateKey, meetings, nowMs, isToday }: TimelineProps) {
-  const dayStartMs = parseDateKey(dateKey).getTime();
+export function Timeline({
+  dayStartMs,
+  timeZone,
+  meetings,
+  nowMs,
+  isToday,
+}: TimelineProps) {
   const layout = layoutDay(meetings, dayStartMs);
   const hours = Array.from(
     { length: layout.endHour - layout.startHour + 1 },
@@ -81,6 +87,7 @@ export function Timeline({ dateKey, meetings, nowMs, isToday }: TimelineProps) {
             <MeetingCard
               meeting={meeting}
               status={displayStatus(meeting, nowMs)}
+              timeZone={timeZone}
               tall={height >= TALL_CARD}
               narrow={columns > 1}
             />

@@ -3,8 +3,6 @@
 import { CalendarDays, Inbox, Settings, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { getDemoPending } from "@/lib/demo/data";
-import { useNow } from "@/lib/time/useNow";
 
 const items = [
   { href: "/today", label: "Today", icon: CalendarDays },
@@ -29,9 +27,8 @@ function Badge({ count }: { count: number }) {
  */
 export function NavLinks({ variant }: { variant: "bar" | "side" }) {
   const pathname = usePathname();
-  const now = useNow();
-  // Sample data for now; the real count comes from the database in milestone 5.
-  const pendingCount = now === null ? 0 : getDemoPending(now).length;
+  // The real count of meetings waiting for a debrief arrives in step 5.
+  const pendingCount = 0;
 
   return (
     <ul className={variant === "bar" ? "flex" : "flex flex-col gap-1"}>

@@ -1,8 +1,8 @@
 /**
- * Sample data for milestone 1 only. Everything here is invented.
- * It is replaced by real calendar data in milestone 2 and then deleted.
+ * Sample data, still used by Inbox (until step 5) and People (until step 4).
+ * Everything here is invented. Today already shows the real calendar.
  */
-import { addDays, parseDateKey, toDateKey } from "@/lib/time";
+import { addDays, dateKeyAt, dayOfWeek, startOfDay } from "@/lib/time";
 import { displayStatus, type Meeting, type PersonSummary } from "@/lib/types";
 
 const people = {
@@ -192,11 +192,15 @@ const week: Template[][] = [
   [],
 ];
 
-export function getDemoMeetings(dateKey: string, nowMs: number): Meeting[] {
-  const day = parseDateKey(dateKey);
-  return week[day.getDay()].map((t) => {
-    const startsAt = new Date(day.getTime() + t.start * 60_000);
-    const endsAt = new Date(day.getTime() + t.end * 60_000);
+function getDemoMeetings(
+  dateKey: string,
+  nowMs: number,
+  timeZone: string,
+): Meeting[] {
+  const dayStart = startOfDay(dateKey, timeZone);
+  return week[dayOfWeek(dateKey)].map((t) => {
+    const startsAt = new Date(dayStart + t.start * 60_000);
+    const endsAt = new Date(dayStart + t.end * 60_000);
     const over = endsAt.getTime() <= nowMs;
     return {
       id: `${dateKey}-${t.slug}`,
@@ -210,11 +214,15 @@ export function getDemoMeetings(dateKey: string, nowMs: number): Meeting[] {
 }
 
 /** Ended meetings from the last few days that still need a debrief, newest first. */
-export function getDemoPending(nowMs: number): Meeting[] {
-  const today = toDateKey(new Date(nowMs));
+export function getDemoPending(nowMs: number, timeZone: string): Meeting[] {
+  const today = dateKeyAt(nowMs, timeZone);
   const pending: Meeting[] = [];
   for (let back = 0; back <= 3; back++) {
-    for (const meeting of getDemoMeetings(addDays(today, -back), nowMs)) {
+    for (const meeting of getDemoMeetings(
+      addDays(today, -back),
+      nowMs,
+      timeZone,
+    )) {
       if (displayStatus(meeting, nowMs) === "pending") pending.push(meeting);
     }
   }

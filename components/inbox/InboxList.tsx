@@ -5,7 +5,12 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { getDemoPending } from "@/lib/demo/data";
-import { formatShortDate, formatTimeRange, toDateKey } from "@/lib/time";
+import {
+  dateKeyAt,
+  deviceTimeZone,
+  formatShortDate,
+  formatTimeRange,
+} from "@/lib/time";
 import { useNow } from "@/lib/time/useNow";
 
 /** Meetings that have ended and still need a debrief, newest first. */
@@ -15,7 +20,8 @@ export function InboxList() {
     return <div aria-busy="true" className="bg-subtle rounded-card h-40" />;
   }
 
-  const pending = getDemoPending(now);
+  const timeZone = deviceTimeZone();
+  const pending = getDemoPending(now, timeZone);
   if (pending.length === 0) {
     return (
       <EmptyState
@@ -32,8 +38,10 @@ export function InboxList() {
           <Card className="p-4">
             <h2 className="text-body font-semibold">{meeting.title}</h2>
             <p className="text-meta text-ink-secondary">
-              {formatShortDate(toDateKey(new Date(meeting.startsAt)))} ·{" "}
-              {formatTimeRange(meeting.startsAt, meeting.endsAt)}
+              {formatShortDate(
+                dateKeyAt(new Date(meeting.startsAt).getTime(), timeZone),
+              )}{" "}
+              · {formatTimeRange(meeting.startsAt, meeting.endsAt, timeZone)}
             </p>
             <div className="mt-3 flex items-center justify-between gap-3">
               <span className="flex items-center gap-1.5">

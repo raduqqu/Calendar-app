@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import {
+  ReconnectBanner,
+  SyncFailedNote,
+} from "@/components/calendar/CalendarBanners";
 import { TodayView } from "@/components/timeline/TodayView";
 import { isDateKey } from "@/lib/time";
+import { loadDay } from "./loadDay";
 
 export const metadata: Metadata = { title: "Today" };
 
@@ -10,6 +15,8 @@ type SearchParams = PageProps<"/today">["searchParams"];
 /** Reads the chosen day from the address bar (/today?date=2026-11-12). */
 async function SelectedDay({ searchParams }: { searchParams: SearchParams }) {
   const { date, notice } = await searchParams;
+  const day = await loadDay(isDateKey(date) ? date : null);
+
   return (
     <>
       {notice === "calendar" && (
@@ -21,7 +28,15 @@ async function SelectedDay({ searchParams }: { searchParams: SearchParams }) {
           saved. Sign out in Settings and sign in again.
         </p>
       )}
-      <TodayView dateKey={isDateKey(date) ? date : null} />
+      {(day.syncStatus === "disconnected" ||
+        day.syncStatus === "not-connected") && <ReconnectBanner />}
+      {day.syncStatus === "failed" && <SyncFailedNote />}
+      <TodayView
+        dateKey={day.dateKey}
+        timeZone={day.timeZone}
+        dayStartMs={day.dayStartMs}
+        meetings={day.meetings}
+      />
     </>
   );
 }

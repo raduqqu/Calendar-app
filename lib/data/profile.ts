@@ -113,7 +113,11 @@ export async function saveGoogleConnection(input: {
     id: input.userId,
     email: input.email,
   };
-  if (input.encryptedRefreshToken) profile.google_connected = true;
+  if (input.encryptedRefreshToken) {
+    profile.google_connected = true;
+    // Read the calendar again on the next page load.
+    profile.last_synced_at = null;
+  }
 
   const { error } = await admin.from("profiles").upsert(profile);
   if (error) throw new Error(`Could not save profile: ${error.message}`);

@@ -1,18 +1,29 @@
 "use client";
 
 import { EmptyState } from "@/components/ui/EmptyState";
-import { SampleNote } from "@/components/ui/PageHeader";
-import { getDemoMeetings } from "@/lib/demo/data";
-import { toDateKey } from "@/lib/time";
+import { dateKeyAt } from "@/lib/time";
 import { useNow } from "@/lib/time/useNow";
+import type { Meeting } from "@/lib/types";
 import { DayHeader } from "./DayHeader";
 import { Timeline } from "./Timeline";
 
-/**
- * The Today screen. `dateKey` is the day chosen in the address bar
- * (/today?date=2026-11-12); without it the screen shows the current day.
- */
-export function TodayView({ dateKey }: { dateKey: string | null }) {
+interface TodayViewProps {
+  /** The day being shown, YYYY-MM-DD. */
+  dateKey: string;
+  /** The user's time zone, e.g. "Europe/Bucharest". */
+  timeZone: string;
+  /** The instant that day starts, in the user's time zone. */
+  dayStartMs: number;
+  meetings: Meeting[];
+}
+
+/** The Today screen: date header, week strip and the day's timeline. */
+export function TodayView({
+  dateKey,
+  timeZone,
+  dayStartMs,
+  meetings,
+}: TodayViewProps) {
   const now = useNow();
 
   // The server cannot know the device's clock, so the first paint is a
@@ -26,27 +37,24 @@ export function TodayView({ dateKey }: { dateKey: string | null }) {
     );
   }
 
-  const todayKey = toDateKey(new Date(now));
-  const selectedKey = dateKey ?? todayKey;
-  const meetings = getDemoMeetings(selectedKey, now);
+  const todayKey = dateKeyAt(now, timeZone);
+  const isToday = dateKey === todayKey;
 
   return (
     <>
-      <DayHeader dateKey={selectedKey} todayKey={todayKey} />
-      <SampleNote>
-        Sample meetings for now. Your real calendar appears in the next step.
-      </SampleNote>
+      <DayHeader dateKey={dateKey} todayKey={todayKey} />
       {meetings.length === 0 ? (
         <EmptyState
-          title={selectedKey === todayKey ? "No meetings today" : "No meetings"}
-          description="Ran into someone or had a call? Add it with the + button."
+          title={isToday ? "No meetings today" : "No meetings"}
+          description="Only meetings with other people show up here. Ran into someone or had a call? Add it with the + button."
         />
       ) : (
         <Timeline
-          dateKey={selectedKey}
+          dayStartMs={dayStartMs}
+          timeZone={timeZone}
           meetings={meetings}
           nowMs={now}
-          isToday={selectedKey === todayKey}
+          isToday={isToday}
         />
       )}
     </>

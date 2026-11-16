@@ -8,6 +8,8 @@ const MAX_AVATARS = 4;
 interface MeetingCardProps {
   meeting: Meeting;
   status: DisplayStatus;
+  /** The user's time zone, for the times shown. */
+  timeZone: string;
   /** Tall cards have room for a third row with names. */
   tall?: boolean;
   /** Narrow cards (two meetings side by side) show less. */
@@ -39,6 +41,7 @@ function AvatarStack({ meeting }: { meeting: Meeting }) {
 export function MeetingCard({
   meeting,
   status,
+  timeZone,
   tall = false,
   narrow = false,
 }: MeetingCardProps) {
@@ -63,8 +66,8 @@ export function MeetingCard({
         <div className="mt-0.5 flex items-center justify-between gap-2">
           <p className="text-meta text-ink-secondary truncate">
             {narrow && !tall
-              ? formatTime(meeting.startsAt)
-              : formatTimeRange(meeting.startsAt, meeting.endsAt)}
+              ? formatTime(meeting.startsAt, timeZone)
+              : formatTimeRange(meeting.startsAt, meeting.endsAt, timeZone)}
           </p>
           {!tall && <AvatarStack meeting={meeting} />}
         </div>

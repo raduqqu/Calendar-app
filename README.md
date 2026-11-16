@@ -7,7 +7,7 @@ A calendar-linked relationship memory app. It reads your Google Calendar, asks w
 
 ## Current state
 
-Milestone 2a of 9: Google sign-in works; the screens still show sample meetings and people.
+Milestone 2 of 9: Google sign-in and your real calendar on Today. Inbox and People still show sample data.
 
 ## Run it on your computer
 

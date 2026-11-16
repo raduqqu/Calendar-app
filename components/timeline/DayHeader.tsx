@@ -3,7 +3,7 @@ import Link from "next/link";
 import {
   addDays,
   formatLongDate,
-  parseDateKey,
+  dayOfMonth,
   weekOf,
   weekdayInitial,
 } from "@/lib/time";
@@ -68,7 +68,7 @@ export function DayHeader({ dateKey, todayKey }: DayHeaderProps) {
                   <span
                     className={`text-meta inline-flex size-8 items-center justify-center rounded-full font-semibold tabular-nums ${circle} ${selected && today ? "ring-primary-light ring-4" : ""}`}
                   >
-                    {parseDateKey(key).getDate()}
+                    {dayOfMonth(key)}
                   </span>
                 </Link>
               </li>
